@@ -1,4 +1,9 @@
 ﻿@model IEnumerable<Lab5_211.Models.Learner>
+@{
+    int pageNum = ViewBag.pageNum ?? 1;
+    int pageIndex = ViewBag.pageIndex ?? 1;
+    int totalItems = ViewBag.totalItems ?? 0;
+}
 
 <table class="table table-striped">
     <thead>
@@ -12,6 +17,12 @@
         </tr>
     </thead>
     <tbody>
+        @if (!Model.Any())
+        {
+            <tr>
+                <td colspan="6" class="text-center text-muted">Không có học viên nào</td>
+            </tr>
+        }
         @foreach (var s in Model)
         {
             <tr>
@@ -28,3 +39,23 @@
         }
     </tbody>
 </table>
+
+<div class="d-flex justify-content-between align-items-center">
+    <span class="text-muted">Trang @pageIndex / @pageNum · @totalItems học viên</span>
+
+    <!-- Lưu trạng thái lọc hiện tại để nút chuyển trang gửi kèm -->
+    <ul class="pagination mb-0" data-mid="@ViewBag.mid" data-keyword="@ViewBag.keyword">
+        <li class="page-item @(pageIndex == 1 ? "disabled" : "")" data-page="@(pageIndex - 1)">
+            <a class="page-link" href="#">&laquo;</a>
+        </li>
+        @for (int i = 1; i <= pageNum; i++)
+        {
+            <li class="page-item @(i == pageIndex ? "active" : "")" data-page="@i">
+                <a class="page-link" href="#">@i</a>
+            </li>
+        }
+        <li class="page-item @(pageIndex == pageNum ? "disabled" : "")" data-page="@(pageIndex + 1)">
+            <a class="page-link" href="#">&raquo;</a>
+        </li>
+    </ul>
+</div>

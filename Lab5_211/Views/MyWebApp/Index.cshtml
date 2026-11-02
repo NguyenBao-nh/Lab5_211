@@ -3,65 +3,79 @@
     ViewData["Title"] = "Index";
     Layout = "~/Views/Shared/MyLayout.cshtml";
 }
-
 <div class="ms-2 mx-2">
     <h1>Learner List</h1>
 
-    <!-- Gọi ViewComponent hiển thị danh sách chuyên ngành -->
+    <!-- Hiển thị danh sách chuyên ngành (ViewComponent) -->
     @await Component.InvokeAsync("Major")
 
-    <!-- Bao bọc table bằng div có id="content" để AJAX cập nhật -->
+    <!-- Form tìm kiếm -->
+    <form id="searchForm" class="d-none d-md-inline-block form-inline ms-auto me-0 me-md-3 my-2 my-md-0">
+        <div class="input-group">
+            <input id="keyword" class="form-control" name="keyword" type="text" placeholder="Search learner" />
+            <button id="btnSearch" class="btn btn-primary" type="submit">
+                <i class="fas fa-search"></i>
+            </button>
+        </div>
+    </form>
+
+    <!-- Vùng chứa bảng dữ liệu và phân trang (dùng chung partial với AJAX) -->
     <div id="content">
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Mã</th>
-                    <th>Tên</th>
-                    <th>Họ</th>
-                    <th>Ngành</th>
-                    <th>Ngày Nhập Học</th>
-                    <th>Chức năng</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var s in Model)
-                {
-                    <tr>
-                        <td>@s.LearnerId</td>
-                        <td>@s.FirstMidName</td>
-                        <td>@s.LastName</td>
-                        <td>@(s.Major != null ? s.Major.MajorName : "")</td>
-                        <td>@s.EnrollmentDate.ToString("dd/MM/yyyy")</td>
-                        <td>
-                            <a asp-action="Edit" asp-route-id="@s.LearnerId">Edit</a> |
-                            <a asp-action="Delete" asp-route-id="@s.LearnerId">Delete</a>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+        <partial name="LearnerTable" model="Model" />
     </div>
 
-    <a asp-action="Create" class="btn btn-primary">Create New Student</a>
+    <a asp-action="Create" class="btn btn-primary mt-2">Create New Student</a>
 </div>
 
 @section Scripts {
-    <!-- Thêm thư viện jQuery nếu Layout chưa có -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
-        // Bắt sự kiện click vào các thẻ li (chuyên ngành)
-        $("li").click(function (e) {
-            var id = $(this).attr("id"); // Lấy MajorId từ id của thẻ li
+        // Trạng thái lọc hiện tại: ngành + từ khóa được giữ khi chuyển trang
+        var currentMid = null;
+        var currentKeyword = "";
+
+        function loadLearners(pageIndex) {
             $.ajax({
-                url: '/MyWebApp/LearnerByMajorID', // Đường dẫn tới Action trong MyWebAppController
-                data: { mid: id },
+                url: '/MyWebApp/LearnerFilter',
+                data: { mid: currentMid, keyword: currentKeyword, pageIndex: pageIndex },
                 success: function (response) {
-                    $("div#content").html(response); // Đưa dữ liệu HTML trả về vào thẻ div#content
-                },
-                error: function (xhr, status, error) {
-                    console.log(error);
+                    $("div#content").html(response);
                 }
             });
+        }
+
+        // 1. Click chuyển trang
+        $('body').on('click', 'li.page-item', function (e) {
+            e.preventDefault();
+            if ($(this).hasClass("disabled") || $(this).hasClass("active")) return;
+
+            // Lấy trạng thái lọc từ chính thanh phân trang vừa được trả về
+            var $pager = $(this).closest("ul.pagination");
+            currentMid = $pager.data("mid") || null;
+            currentKeyword = $pager.data("keyword") || "";
+
+            loadLearners($(this).data("page"));
+        });
+
+        // 2. Click chọn chuyên ngành (click lại lần nữa để bỏ lọc)
+        $(".nav-item").click(function (e) {
+            var id = $(this).attr("id");
+            var $link = $(this).find(".nav-link");
+
+            $(".nav-item .nav-link").removeClass("active bg-primary text-white").addClass("bg-light text-dark");
+            if (currentMid == id) {
+                currentMid = null;
+            } else {
+                currentMid = id;
+                $link.removeClass("bg-light text-dark").addClass("active bg-primary text-white");
+            }
+            loadLearners(1);
+        });
+
+        // 3. Tìm kiếm (bấm nút hoặc Enter), giữ nguyên ngành đang lọc
+        $("form#searchForm").submit(function (e) {
+            e.preventDefault();
+            currentKeyword = $("input#keyword").val();
+            loadLearners(1);
         });
     </script>
 }
