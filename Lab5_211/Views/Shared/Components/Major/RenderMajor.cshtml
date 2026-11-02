@@ -1,0 +1,9 @@
+﻿@model IEnumerable<Lab5_211.Models.Major>
+<ul class="nav nav-pills mb-3">
+    @foreach (var m in Model)
+    {
+        <li class="nav-item me-2" id="@m.MajorId">
+            <a class="nav-link bg-light text-dark border" style="cursor: pointer;">@m.MajorName</a>
+        </li>
+    }
+</ul>

@@ -1,0 +1,67 @@
+﻿@model IEnumerable<Lab5_211.Models.Learner>
+@{
+    ViewData["Title"] = "Index";
+    Layout = "~/Views/Shared/MyLayout.cshtml";
+}
+
+<div class="ms-2 mx-2">
+    <h1>Learner List</h1>
+
+    <!-- Gọi ViewComponent hiển thị danh sách chuyên ngành -->
+    @await Component.InvokeAsync("Major")
+
+    <!-- Bao bọc table bằng div có id="content" để AJAX cập nhật -->
+    <div id="content">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Mã</th>
+                    <th>Tên</th>
+                    <th>Họ</th>
+                    <th>Ngành</th>
+                    <th>Ngày Nhập Học</th>
+                    <th>Chức năng</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var s in Model)
+                {
+                    <tr>
+                        <td>@s.LearnerId</td>
+                        <td>@s.FirstMidName</td>
+                        <td>@s.LastName</td>
+                        <td>@(s.Major != null ? s.Major.MajorName : "")</td>
+                        <td>@s.EnrollmentDate.ToString("dd/MM/yyyy")</td>
+                        <td>
+                            <a asp-action="Edit" asp-route-id="@s.LearnerId">Edit</a> |
+                            <a asp-action="Delete" asp-route-id="@s.LearnerId">Delete</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <a asp-action="Create" class="btn btn-primary">Create New Student</a>
+</div>
+
+@section Scripts {
+    <!-- Thêm thư viện jQuery nếu Layout chưa có -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        // Bắt sự kiện click vào các thẻ li (chuyên ngành)
+        $("li").click(function (e) {
+            var id = $(this).attr("id"); // Lấy MajorId từ id của thẻ li
+            $.ajax({
+                url: '/MyWebApp/LearnerByMajorID', // Đường dẫn tới Action trong MyWebAppController
+                data: { mid: id },
+                success: function (response) {
+                    $("div#content").html(response); // Đưa dữ liệu HTML trả về vào thẻ div#content
+                },
+                error: function (xhr, status, error) {
+                    console.log(error);
+                }
+            });
+        });
+    </script>
+}
